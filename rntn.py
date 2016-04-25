@@ -1,5 +1,7 @@
 import numpy as np
 import parsePTB
+import pickle
+
 class RNTN:
 
     def __init__(self, wordvec_dim, num_words, output_dim, words, minibatch_size = 10, learning_rate = 0.0001):
@@ -10,6 +12,7 @@ class RNTN:
         self.minibatch_size = minibatch_size
         self.learning_rate = learning_rate
         self._lambda = 0.0001
+        self.model_trained_file = "./trained_params"
 
     def init(self):
         # word embedding
@@ -118,6 +121,9 @@ class RNTN:
         for tree in minibatch:
             self.backPropagateTree(tree)
         
+        if total == 0:
+            return
+
         scale = (1./self.minibatch_size)
         for v in self.dX.itervalues():
             v *=scale
@@ -126,8 +132,7 @@ class RNTN:
             self.X[:,j] += scale*self.dX[j] 
         cost = self.getMinibatchCost()
         self.updateMinibatchGradient()
-        if total != 0:
-            print 'cost:', scale*cost, ", acc: %0.2f"%((correct*1.0/total)*100)+"%" 
+        print 'cost:', scale*cost, ", acc: %0.2f"%((correct*1.0/total)*100)+"%" 
 
     def getMinibatchCost(self):
         cost = self._lambda/2 * np.linalg.norm(self.W)**2
@@ -142,8 +147,45 @@ class RNTN:
         self.Sw = self.Sw - self.learning_rate*(scale*self.dSw + self._lambda * self.Sw)
         self.b = self.b - self.learning_rate*(scale*self.db)
         self.Sb = self.Sb - self.learning_rate*(scale*self.dSb)
-        
-if __name__ == "__main__":
+
+    def save(self):
+        with open(self.model_trained_file, 'w') as f:
+            pickle.dump([self.W, self.Sw, self.b, self.Sb, self.X], f)
+
+    def read(self):
+        with open(self.model_trained_file) as f:
+            params = pickle.load(f)
+            self.W = params[0]
+            self.Sw = params[1]
+            self.b = params[2]
+            self.Sb = params[3]
+            self.X = params[4]
+
+
+def test():
+    file = 'trees/train.txt'
+    p = parsePTB.Parser()
+    trees = []
+    words = set()
+    with open(file, 'r') as fid:
+        lines = fid.readlines()
+        for l in lines:
+            node = p.parse(l)
+            trees.append(node)
+            parsePTB.findWords(node, words)
+    words = list(words)
+    model = RNTN(30, len(words), 5, words, 100, 0.00001)
+    model.init()
+    model.read()
+    minibatch_size = 100
+    epoch = 2
+    for e in xrange(0, epoch, 1):
+        print "****** epoch : ", e
+        for i in xrange(0, len(words)-minibatch_size+1, minibatch_size):
+            print "------------ iter :", i
+            model.step(trees[i:i+minibatch_size])
+
+def train():
     file = 'trees/train.txt'
     p = parsePTB.Parser()
     trees = []
@@ -157,17 +199,16 @@ if __name__ == "__main__":
     words = list(words)
     model = RNTN(30, len(words), 5, words, 100, 0.00001)
     model.init()
-    minibatch_size = 30
-    epoch = 10
+    minibatch_size = 100
+    epoch = 2
     for e in xrange(0, epoch, 1):
         print "****** epoch : ", e
         for i in xrange(0, len(words)-minibatch_size+1, minibatch_size):
             print "------------ iter :", i
             model.step(trees[i:i+minibatch_size])
 
+        model.save()
 
-            
-
-
-
+if __name__ == "__main__":
+    test()
         
