@@ -3,4 +3,6 @@
 #####(currently using only RNN without tensor)
 -------
 ### Train the network
-<pre><code> python rntn.py </code></pre>
+<pre><code> python rntn.py --train</code></pre>
+### Test the network
+<pre><code> python rntn.py --test</code></pre>
