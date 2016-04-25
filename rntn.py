@@ -163,7 +163,8 @@ class RNTN:
 
 
 def test():
-    file = 'trees/train.txt'
+    print "Testing..."
+    file = 'trees/test.txt'
     p = parsePTB.Parser()
     trees = []
     words = set()
@@ -186,6 +187,7 @@ def test():
             model.step(trees[i:i+minibatch_size])
 
 def train():
+    print "Training..."
     file = 'trees/train.txt'
     p = parsePTB.Parser()
     trees = []
@@ -210,5 +212,18 @@ def train():
         model.save()
 
 if __name__ == "__main__":
-    test()
+    import sys
+    import optparse
+    args = sys.argv[1:]
+    hint = "Usage: %prog [options]"
+    parser = optparse.OptionParser(usage=hint)
+    parser.add_option("--train", action="store_true", dest="train")
+    parser.add_option("--test", action="store_false", dest="train")
+    (options, args) = parser.parse_args()
+    if len(args) != 1:
+        parser.error("wrong number of arguments")
+    if options.train:
+        train()
+    else:
+        test()
         
